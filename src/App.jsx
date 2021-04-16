@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -6,9 +6,13 @@ import {
   Redirect,
 } from "react-router-dom";
 
+import { MainProvider } from "helpers/store";
 import { SignUp } from "pages/SignUp";
 import { SignIn } from "pages/SignIn";
+import { TFA } from "pages/TFA";
 import { Main } from "pages/Main";
+
+import { MainContext } from "helpers/store";
 
 const ProtectedRoute = ({
   component: Component,
@@ -24,7 +28,7 @@ const ProtectedRoute = ({
           return <Component logout={logout} />;
         } else {
           return (
-            <Redirect to={{ pathname: "/", state: { from: props.location } }} />
+            <Redirect to={{ pathname: "/sign-in", state: { from: props.location } }} />
           );
         }
       }}
@@ -33,9 +37,8 @@ const ProtectedRoute = ({
 };
 
 export const App = () => {
+  const context = useContext(MainContext);
   const [isAuthenticated, setIsAuthenticated] = useState(0);
-
-  useEffect(() => {}, [isAuthenticated]);
 
   const login = () => {
     setIsAuthenticated(true);
@@ -46,31 +49,33 @@ export const App = () => {
   };
 
   return (
+  <MainProvider>
     <Router>
       <Switch>
-        <Route path="/" exact>
-          {isAuthenticated ? (
-            <Redirect to="/main" />
-          ) : (
-            <Redirect to="/sign-in" />
-          )}
-        </Route>
-        <ProtectedRoute
+        {/* <ProtectedRoute
           isAuthenticated={isAuthenticated}
-          path="/main"
+          path="/"
+          exact
           logout={logout}
           component={Main}
-        />
+        /> */}
         <Route path="/sign-in" exact>
-          <SignIn login={login} isAuthenticated={isAuthenticated} />
+          <SignIn login={login}/>
         </Route>
         <Route path="/sign-up" exact>
-          <SignUp login={login} />
+          <SignUp login={login}/>
+        </Route>
+        <Route path="/tfa" exact>
+          <TFA login={login} />
+        </Route>
+        <Route path="/" exact>
+          <TFA login={login} />
         </Route>
         <Route path="*">
           <div>404 Not found </div>
         </Route>
       </Switch>
     </Router>
+  </MainProvider>
   );
 };

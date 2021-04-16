@@ -1,4 +1,4 @@
-import React, {useState,useContext} from "react";
+import React, {useContext} from "react";
 import Avatar from "@material-ui/core/Avatar";
 import Button from "@material-ui/core/Button";
 import CssBaseline from "@material-ui/core/CssBaseline";
@@ -11,7 +11,7 @@ import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
 
-import { Link as RRDLink, Redirect, useHistory } from "react-router-dom";
+import { Link as RRDLink, Redirect } from "react-router-dom";
 
 import { MainContext } from "helpers/store";
 
@@ -48,38 +48,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const SignIn = ({ login, isAuthenticated }) => {
-  const history = useHistory();
+export const TFA = ({ login, isAuthenticated }) => {
   const context = useContext(MainContext);
   const classes = useStyles();
 
-  const [authData, setAuthData] = useState({
-    email: "",
-    password: "",
-  });
-
-  const onChange = ({ target: { id, value } }) => {
-    const _authData = authData;
-    _authData[id] = value;
-    setAuthData({ ..._authData });
-  };
-
-  const signIn = async (authData) => {
-    const response = await fetch(`${process.env.REACT_APP_API_HOST}/api/user/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({...authData}),
-    });
-    const _response = await response.json();
-    return _response;
-  }
-
-
-  if (context.token) {
-    return <Redirect to="/" />;
-  }
+  // if (!context.qr_code || !context.token) {
+  //   return <Redirect to="/sign-up" />;
+  // }
 
   return (
     <Container component="main" maxWidth="xs">
@@ -88,38 +63,21 @@ export const SignIn = ({ login, isAuthenticated }) => {
         <Avatar className={classes.avatar}>
           <LockOutlinedIcon />
         </Avatar>
+        
+        {context.qr_code ? (<img src={context.qr_code} alt=""/>) : null}
+        
         <Typography component="h1" variant="h5">
-          Sign In
+          Two Factor Authentication
         </Typography>
+        
         <form
           className={classes.form}
           noValidate
-          onSubmit={async (e) => {
+          onSubmit={(e) => {
             e.preventDefault();
             
-            if (authData.email && authData.password) {
-              let _data = await signIn(authData);
-              if (_data.token) {
-                context.setToken(_data.token);
-                history.push("/tfa")
-              } else if (_data.error) {
-                alert(_data.error)
-              }
-            }
           }}
         >
-          <TextField
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoFocus
-            autoComplete="off"
-            onChange={onChange}
-          />
           <TextField
             variant="outlined"
             margin="normal"
@@ -130,7 +88,6 @@ export const SignIn = ({ login, isAuthenticated }) => {
             type="password"
             id="password"
             autoComplete="off"
-            onChange={onChange}
           />
           <Button
             type="submit"
@@ -139,7 +96,7 @@ export const SignIn = ({ login, isAuthenticated }) => {
             color="primary"
             className={classes.submit}
           >
-            Sign In
+            Accept
           </Button>
           <Grid container>
             <Grid item>
@@ -147,9 +104,9 @@ export const SignIn = ({ login, isAuthenticated }) => {
                 href="#"
                 variant="body2"
                 component={RRDLink}
-                to="/sign-up"
+                to="/sign-in"
               >
-                {"Don't have an account? Sign Up"}
+                {"Already have an account? Sign In"}
               </Link>
             </Grid>
           </Grid>

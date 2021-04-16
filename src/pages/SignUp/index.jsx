@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState,useContext} from "react";
 import Avatar from "@material-ui/core/Avatar";
 import Button from "@material-ui/core/Button";
 import CssBaseline from "@material-ui/core/CssBaseline";
@@ -11,7 +11,9 @@ import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import Container from "@material-ui/core/Container";
 
-import { Link as RRDLink, Redirect } from "react-router-dom";
+import { Link as RRDLink, Redirect, useHistory } from "react-router-dom";
+
+import { MainContext } from "helpers/store";
 
 function Copyright() {
   return (
@@ -47,77 +49,116 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const SignUp = ({ login, isAuthenticated }) => {
+  const history = useHistory();
+  const context = useContext(MainContext);
   const classes = useStyles();
-  if (isAuthenticated) {
-    return <Redirect to="/" />;
-  } else {
-    return (
-      <Container component="main" maxWidth="xs">
-        <CssBaseline />
-        <div className={classes.paper}>
-          <Avatar className={classes.avatar}>
-            <LockOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Sign Up
-          </Typography>
-          <form
-            className={classes.form}
-            noValidate
-            onSubmit={(e) => {
-              e.preventDefault();
-              login();
-            }}
-          >
-            <TextField
-              variant="outlined"
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoFocus
-              autoComplete="off"
-            />
-            <TextField
-              variant="outlined"
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="off"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              color="primary"
-              className={classes.submit}
-            >
-              Sign Up
-            </Button>
-            <Grid container>
-              <Grid item>
-                <Link
-                  href="#"
-                  variant="body2"
-                  component={RRDLink}
-                  to="/sign-in"
-                >
-                  {"Already have an account? Sign In"}
-                </Link>
-              </Grid>
-            </Grid>
-          </form>
-        </div>
-        <Box mt={8}>
-          <Copyright />
-        </Box>
-      </Container>
-    );
+
+  const [authData, setAuthData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const onChange = ({ target: { id, value } }) => {
+    const _authData = authData;
+    _authData[id] = value;
+    setAuthData({ ..._authData });
+  };
+
+  const signUp = async (authData) => {
+    const response = await fetch(`${process.env.REACT_APP_API_HOST}/api/user/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({...authData}),
+    });
+    const _response = await response.json();
+    return _response;
   }
+
+
+  if (context.token) {
+    return <Redirect to="/" />;
+  }
+
+  return (
+    <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <div className={classes.paper}>
+        <Avatar className={classes.avatar}>
+          <LockOutlinedIcon />
+        </Avatar>
+        <Typography component="h1" variant="h5">
+          Sign Up
+        </Typography>
+        <form
+          className={classes.form}
+          noValidate
+          onSubmit={async (e) => {
+            e.preventDefault();
+            
+            if (authData.email && authData.password) {
+              let _data = await signUp(authData);
+              if (_data.token && _data.qr_code) {
+                context.setToken(_data.token);
+                context.setQRcode(_data.qr_code);
+                history.push("/tfa")
+              } else if (_data.error) {
+                alert(_data.error)
+              }
+            }
+          }}
+        >
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoFocus
+            autoComplete="off"
+            onChange={onChange}
+          />
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="off"
+            onChange={onChange}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            className={classes.submit}
+          >
+            Sign Up
+          </Button>
+          <Grid container>
+            <Grid item>
+              <Link
+                href="#"
+                variant="body2"
+                component={RRDLink}
+                to="/sign-in"
+              >
+                {"Already have an account? Sign In"}
+              </Link>
+            </Grid>
+          </Grid>
+        </form>
+      </div>
+      <Box mt={8}>
+        <Copyright />
+      </Box>
+    </Container>
+  );
 };

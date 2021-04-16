@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useContext} from "react";
 import {
   Container,
   Grid,
@@ -16,6 +16,10 @@ import {
 
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import { makeStyles } from "@material-ui/core/styles";
+
+import { Link as RRDLink, Redirect, useHistory } from "react-router-dom";
+
+import { MainContext } from "helpers/store";
 
 function Copyright() {
   return (
@@ -110,7 +114,12 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export const Main = () => {
+  const context = useContext(MainContext);
   const classes = useStyles();
+
+  if (!context.qr_code || !context.token) {
+    return <Redirect to="/sign-in" />;
+  }
 
   return (
     <div className={classes.root}>
